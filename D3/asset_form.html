@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>固定資産</title>
+  <link rel="stylesheet" href="css/style3.css">
+</head>
+<body>
+  <div class="top-bar">
+        <div class="top-left">
+            <button class="logo-img" onclick="location.href='menu.html'">
+                <img src="img\logo.png">
+            </button>
+        </div>
+        <div class="top-right">
+            <span>ID : A1234</span>
+            <span>名前 : アンスヨン</span>
+            <button class="logoutBtn" type="button" onclick="location.href='login.html'">LOGOUT</button>
+        </div>
+    </div>
+
+  <div class="header-hero">
+    <h2>固定資産 管理システム</h2>
+  </div>
+
+  <div class="container">
+    <div class="header-bar">
+      <div class="header-title">建物 固定資産管理</div>
+      <button class="btn btn-CSV">CSV 読み込む</button>
+    </div>
+
+    <div class="form-wrap">
+      <table>
+        <tr>
+          <td class="label">コード<span class="required">*</span></td>
+          <td><input id="code" type="text" placeholder="例：A123"></td>
+          <td class="label">製造会社<span class="required">*</span></td>
+          <td><input id="maker" type="text" placeholder="メーカー名"></td>
+          <td class="label">カテゴリー</td>
+          <td>
+            <div class="cat-inline">
+              <input id="categoryName" type="text" placeholder="選択してください" readonly>
+              <input id="categoryCode" type="hidden">
+              <button type="button" id="btnCatSearch" class="inline-btn">検索</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">品目<span class="required">*</span></td>
+          <td><input id="item" type="text" placeholder="品目名"></td>
+          <td class="label">購入日<span class="required">*</span></td>
+          <td><input id="purchaseDate" type="date"></td>
+          <td class="label">位置コード</td>
+          <td>
+            <div class="cat-inline">
+              <input id="locationCode" type="text" placeholder="自動生成(数字のみ)" readonly>
+              <button type="button" id="btnLocSearch" class="inline-btn">検索</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">商品名1<span class="required">*</span></td>
+          <td><input id="name1" type="text" placeholder="商品名"></td>
+          <td class="label">購入価格<span class="required">*</span></td>
+          <td><input id="purchasePrice" type="number" placeholder="円" class="right"></td>
+          <td class="label">階</td>
+          <td><input id="floor" type="text" placeholder="位置コードから自動入力" readonly class="readonly"></td>
+        </tr>
+
+        <tr>
+          <td class="label">商品名2</td>
+          <td><input id="name2" type="text" placeholder="商品名"></td>
+          <td class="label">配達費</td>
+          <td><input id="delivery" type="number" placeholder="円" class="right"></td>
+          <td class="label">エリア</td>
+          <td>
+            <input id="area" type="text" placeholder="位置コードから自動入力" readonly class="readonly">
+            <input id="areaIndex" type="hidden">
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">規格1</td>
+          <td><input id="spec1" type="text" placeholder="規格"></td>
+          <td class="label">外</td>
+          <td><input id="extraCost" type="number" placeholder="円" class="right"></td>
+          <td class="label">番号</td>
+          <td><input id="number" type="text" placeholder="位置コードから自動入力" readonly class="readonly"></td>
+        </tr>
+
+        <tr>
+          <td class="label">規格2</td>
+          <td><input id="spec2" type="text" placeholder="規格"></td>
+          <td class="label">数量<span class="required">*</span></td>
+          <td><input id="qty" type="number" placeholder="数量" class="right"></td>
+        </tr>
+
+        <tr>
+          <td class="label">サイズ</td>
+          <td><input id="size" type="text" placeholder="単位まで"></td>
+          <td class="label">耐用年数<span class="required">*</span></td>
+          <td><input id="serviceLife" type="number" placeholder="例: 10(年)" min="1" max="60" step="1"></td>
+        </tr>
+
+        <tr>
+          <td class="label">償却方法</td>
+          <td>
+            <select id="depreciationMethod">
+              <option value="">選択してください</option>
+              <option value="SL">定額法</option>
+              <option value="DB">定率法</option>
+            </select>
+          </td>
+          <td class="label">減価償却累計</td>
+          <td><input id="accumDepr" type="number" class="right readonly short" readonly></td>
+        </tr>
+      </table>
+
+      <div class="button-area">
+        <button class="btn btn-back" id="btnBack" onclick="history.back()">戻る</button>
+        <div class="right-buttons">
+          <button class="btn btn-clear" id="btnClear">CLEAR</button>
+          <button class="btn btn-register" id="btnRegister">登録</button>
+          <button class="btn btn-update" id="btnUpdate">修正</button>
+          <button class="btn btn-delete" id="btnDelete">削除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div class="modal-overlay" id="catModal" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="catTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="catTitle">カテゴリー検索</div>
+        <div class="search-field">
+          <input id="catSearchInput" type="text" placeholder="コード / 名称で検索">
+          <button class="search-go" id="catSearchBtn">検索</button>
+        </div>
+        <button class="btn" id="catClear">クリア</button>
+        <button class="btn btn-delete" id="catClose">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <table class="cat-table" id="catTable">
+          <thead><tr><th style="width:160px;">コード</th><th>名称</th></tr></thead>
+          <tbody id="catTbody"></tbody>
+        </table>
+
+        <div class="empty" id="catEmpty">
+          <h4>該当するカテゴリーがありません</h4>
+          <div>新しいカテゴリーを登録できます</div>
+          <div class="newcat-row">
+            <input id="newCatCode" class="code" type="text" placeholder="コード">
+            <input id="newCatName" class="name" type="text" placeholder="名称">
+          </div>
+          <div class="newcat-actions">
+            <button class="btn-primary" id="btnNewCatSave">登録</button>
+            <button class="btn" id="btnNewCatCancel">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Modal -->
+  <div class="modal-overlay" id="locModal" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="locTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="locTitle">位置の入力 / 検索</div>
+        <button class="btn btn-delete" id="locClose">閉じる</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="newcat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+          <input id="locFloor"  type="text" placeholder="階(例: 3F)"  style="height:36px;border:1px solid #c8d3e0;border-radius:8px;padding:0 10px;width:120px">
+          <input id="locArea"   type="text" placeholder="エリア(例: A)" style="height:36px;border:1px solid #c8d3e0;border-radius:8px;padding:0 10px;width:120px">
+          <input id="locNumber" type="text" placeholder="番号(例: 7)"   style="height:36px;border:1px solid #c8d3e0;border-radius:8px;padding:0 10px;width:140px">
+          <div style="margin-left:8px;">位置コード(自動): <strong id="locCodePreview">———</strong></div>
+          <button class="btn-primary" id="btnUseThisLoc" style="background:#244c9d;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer">この位置を使う</button>
+          <button class="btn" id="btnLocClear">クリア</button>
+        </div>
+
+        <hr style="margin:10px 0;">
+
+        <div class="search-field" style="display:flex; gap:8px; align-items:center;">
+          <input id="locSearchInput" type="text" placeholder="位置コード / 階 / エリア / 番号で検索" style="flex:1;">
+          <button class="search-go" id="locSearchBtn">検索</button>
+        </div>
+
+        <table class="cat-table" id="locTable" style="margin-top:10px;">
+          <thead>
+            <tr>
+              <th style="width:160px;">位置コード</th>
+              <th style="width:100px;">階</th>
+              <th style="width:100px;">エリア</th>
+              <th style="width:120px;">番号</th>
+            </tr>
+          </thead>
+          <tbody id="locTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const FIELDS = {
+    code:'code', category:'categoryName', item:'item', name:'name1',
+    building:'building', floor:'floor', area:'area', number:'number',
+    price:'amount', maker:'maker', qty:'qty'
+  };
+  function setVal(id,v){ const el=document.getElementById(id); if(el&&v!=null) el.value=v; }
+  function getNumber(id){ const v=parseFloat(document.getElementById(id)?.value||''); return isNaN(v)?0:v; }
+  function toNumberSafe(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
+
+  function fillFromPayload(p){
+    if(!p) return;
+    for(const k in FIELDS){ if(Object.hasOwn(p,k)) setVal(FIELDS[k], p[k]); }
+    if(p.category_code&&p.category_name){ setVal('categoryCode',p.category_code); setVal('categoryName',p.category_name); }
+    if(p.location_code){ setVal('locationCode', p.location_code); syncFromLocationCode(); }
+    recalcAccumDepr();
+  }
+  function loadFromQuery(){
+    const q=new URLSearchParams(location.search);
+    const obj={};
+    q.forEach((v,k)=>{ obj[k]=v; });
+    return Object.keys(obj).length?obj:null;
+  }
+
+  function parseFloorDigits(floorStr){
+    const m=(floorStr||'').match(/\d+/g); const num=m?parseInt(m.join(''),10):0;
+    return String(Math.max(0, Math.min(99, num))).padStart(2,'0');
+  }
+  function areaToDigits(areaStr){
+    const ch=((areaStr||'').trim().toUpperCase().match(/[A-Z]/)||[])[0];
+    if(!ch) return '00';
+    const n=ch.charCodeAt(0)-64;
+    return String(Math.max(1, Math.min(26, n))).padStart(2,'0');
+  }
+  function numberToDigits(numStr){
+    const m=(numStr||'').match(/\d+/g); const num=m?parseInt(m.join(''),10):0;
+    return String(Math.max(0, Math.min(999, num))).padStart(3,'0');
+  }
+  function genLocationCode(floorStr, areaStr, numberStr){
+    return parseFloorDigits(floorStr) + areaToDigits(areaStr) + numberToDigits(numberStr);
+  }
+  function digitsToArea(aa){
+    const n=Number(aa);
+    if(!n||n<1||n>26) return '';
+    return String.fromCharCode(64+n);
+  }
+  function syncFromLocationCode(){
+    const code=(document.getElementById('locationCode')?.value||'').trim();
+    if(!/^\d{7}$/.test(code)) return;
+    const ff=code.slice(0,2);
+    const aa=code.slice(2,4);
+    const nnn=code.slice(4,7);
+    setVal('floor', String(Number(ff))+'F');
+    setVal('area', digitsToArea(aa));
+    setVal('areaIndex', aa);
+    setVal('number', String(Number(nnn)));
+  }
+
+  function getDepreciableBase(){
+    const unit     = toNumberSafe(document.getElementById('purchasePrice')?.value);
+    const qtyRaw   = toNumberSafe(document.getElementById('qty')?.value);
+    const qty      = qtyRaw > 0 ? qtyRaw : 1;
+    const delivery = toNumberSafe(document.getElementById('delivery')?.value);
+    const extra    = toNumberSafe(document.getElementById('extraCost')?.value);
+    return Math.max(0, unit*qty + delivery + extra);
+  }
+  function yearsElapsedFrom(dateStr){
+    if(!dateStr) return 0;
+    const start=new Date(dateStr);
+    if(isNaN(start)) return 0;
+    const now=new Date();
+    const ms=now-start;
+    return Math.max(0, ms/(365.25*24*60*60*1000));
+  }
+  function calcAccumSL(base, life, elapsed){
+    const annual=base/life;
+    const accum=Math.min(base, annual*elapsed);
+    return Math.max(0, Math.round(accum*100)/100);
+  }
+  function calcAccumDB200Switch(base, life, elapsed){
+    if (elapsed<=0 || base<=0 || life<=0) return 0;
+    const rateDB=Math.min(1, 2/life);
+    let book=base;
+    let accum=0;
+    const fullYears=Math.floor(elapsed);
+    const frac=elapsed-fullYears;
+    for(let y=0;y<fullYears;y++){
+      const yearsLeft=Math.max(1, life-y);
+      const annualDB = book*rateDB;
+      const annualSL = book/yearsLeft;
+      const annual=Math.max(annualDB, annualSL);
+      const used=Math.min(book-1, Math.max(0, annual));
+      accum+=used; book-=used;
+      if(book<=1){ book=1; break; }
+    }
+    if(frac>0 && book>1){
+      const yearsLeft=Math.max(1, life-fullYears);
+      const annualDB=book*rateDB;
+      const annualSL=book/yearsLeft;
+      const annual=Math.max(annualDB, annualSL);
+      const used=Math.min(book-1, Math.max(0, annual*frac));
+      accum+=used; book-=used;
+      if(book<1) book=1;
+    }
+    accum=Math.min(base, Math.max(0, accum));
+    return Math.round(accum*100)/100;
+  }
+  function recalcAccumDepr(){
+    const method=document.getElementById('depreciationMethod')?.value||'';
+    const life=Math.max(1, toNumberSafe(document.getElementById('serviceLife')?.value));
+    const elapsed=yearsElapsedFrom(document.getElementById('purchaseDate')?.value);
+    const base=getDepreciableBase();
+    let accum=0;
+    if(!method || base<=0 || life<=0 || elapsed<=0){ setVal('accumDepr',0); return; }
+    if(method==='SL') accum=calcAccumSL(base, life, elapsed);
+    else if(method==='DB') accum=calcAccumDB200Switch(base, life, elapsed);
+    setVal('accumDepr', accum);
+  }
+
+  function getCategorySource(){
+    try{
+      const raw=sessionStorage.getItem('categoryMaster');
+      if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)) return arr; }
+    }catch(e){}
+    return [
+      {code:'A',name:'aaaaa'},{code:'B',name:'bbbbb'},{code:'C',name:'cccdd'},
+      {code:'D',name:'ddddd'},{code:'E',name:'eeedd'},{code:'F',name:'fffff'},
+      {code:'G',name:'ggggg'},{code:'H',name:'hhhhh'},{code:'I',name:'iiiii'},
+      {code:'J',name:'jjjjj'}
+    ];
+  }
+  function saveCategorySource(arr){
+    try{ sessionStorage.setItem('categoryMaster', JSON.stringify(arr)); }catch(e){}
+  }
+  function addNewCategory(code,name,data){
+    const c=(code||'').trim(), n=(name||'').trim();
+    if(!c||!n) return {ok:false, msg:'empty'};
+    if(data.some(x=>x.code.toLowerCase()===c.toLowerCase())) return {ok:false, msg:'dup'};
+    data.push({code:c, name:n});
+    saveCategorySource(data);
+    setVal('categoryCode', c);
+    setVal('categoryName', n);
+    return {ok:true};
+  }
+  function ensureCatEmptyUiExists(){
+    const empty=document.getElementById('catEmpty');
+    return {
+      emptyBox: empty,
+      newCode: document.getElementById('newCatCode'),
+      newName: document.getElementById('newCatName'),
+      btnSave: document.getElementById('btnNewCatSave'),
+      btnCancel: document.getElementById('btnNewCatCancel')
+    };
+  }
+  function initCategoryModal(){
+    const modal=document.getElementById('catModal');
+    const tbody=document.getElementById('catTbody');
+    const input=document.getElementById('catSearchInput');
+    const btnOpen=document.getElementById('btnCatSearch');
+    const btnClose=document.getElementById('catClose');
+    const btnClear=document.getElementById('catClear');
+    const btnGo=document.getElementById('catSearchBtn');
+    const table=document.getElementById('catTable');
+    const {emptyBox,newCode,newName,btnSave,btnCancel}=ensureCatEmptyUiExists();
+    let data=getCategorySource();
+    let filtered=data.slice();
+    let activeIndex=-1;
+    function showEmpty(show){
+      if(!emptyBox) return;
+      emptyBox.style.display=show?'block':'none';
+      if(table) table.style.display=show?'none':'table';
+      if(show){
+        const seed=input.value.trim();
+        if(seed){ newCode.value=seed.toUpperCase().slice(0,12); newName.value=seed; }
+        else{ newCode.value=''; newName.value=''; }
+      }
+    }
+    function render(){
+      tbody.innerHTML='';
+      filtered.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className='cat-row'+(i===activeIndex?' active':'');
+        tr.innerHTML=`<td>${r.code}</td><td>${r.name}</td>`;
+        tr.addEventListener('click',()=>setActive(i));
+        tr.addEventListener('dblclick',()=>choose(i));
+        tbody.appendChild(tr);
+      });
+      showEmpty(filtered.length===0);
+    }
+    function open(){
+      modal.style.display='flex';
+      input.value='';
+      filtered=data.slice();
+      activeIndex=filtered.length?0:-1;
+      render();
+      setTimeout(()=>input.focus(),0);
+    }
+    function close(){ modal.style.display='none'; }
+    function setActive(i){
+      activeIndex=i;
+      [...tbody.querySelectorAll('.cat-row')].forEach((row,idx)=>row.classList.toggle('active', idx===activeIndex));
+    }
+    function choose(i){
+      const row=filtered[i]; if(!row) return;
+      setVal('categoryCode',row.code);
+      setVal('categoryName',row.name);
+      close();
+    }
+    function doFilter(q){
+      const t=(q||'').trim().toLowerCase();
+      if(!t){ filtered=data.slice(); activeIndex=filtered.length?0:-1; render(); return; }
+      filtered=data.filter(r=>(r.code+' '+r.name).toLowerCase().includes(t));
+      activeIndex=filtered.length?0:-1; render();
+    }
+    btnOpen?.addEventListener('click', open);
+    btnClose?.addEventListener('click', close);
+    btnClear?.addEventListener('click', ()=>{
+      setVal('categoryCode',''); setVal('categoryName','');
+      input.value=''; doFilter('');
+    });
+    btnGo?.addEventListener('click', ()=>doFilter(input.value));
+    input?.addEventListener('input', e=>doFilter(e.target.value));
+    input?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); btnGo.click(); }});
+    btnSave?.addEventListener('click', ()=>{
+      const r=addNewCategory(newCode.value,newName.value,data);
+      if(r.ok){ filtered=data.slice(); activeIndex=filtered.length-1; render(); close(); }
+      else if(r.msg==='dup'){ alert('同じコードが既に存在します'); }
+      else{ alert('コードと名称を入力してください'); }
+    });
+    btnCancel?.addEventListener('click', ()=>{ input.focus(); });
+    document.addEventListener('keydown', (e)=>{
+      if(modal.style.display!=='flex') return;
+      if(e.key==='Escape') { e.preventDefault(); close(); return; }
+      if(filtered.length){
+        if(e.key==='ArrowDown'){ e.preventDefault(); setActive(Math.min(activeIndex+1, filtered.length-1)); ensureVisible(); }
+        if(e.key==='ArrowUp'){ e.preventDefault(); setActive(Math.max(activeIndex-1, 0)); ensureVisible(); }
+        if(e.key==='Enter'){ e.preventDefault(); if(activeIndex>=0) choose(activeIndex); }
+      }else{
+        if(e.key==='Enter'){ e.preventDefault(); btnSave?.click(); }
+      }
+    });
+    function ensureVisible(){
+      const rows=tbody.querySelectorAll('.cat-row');
+      const r=rows[activeIndex]; if(!r) return;
+      r.scrollIntoView({block:'nearest'});
+    }
+  }
+
+  function initLocationModal(){
+    const modal=document.getElementById('locModal');
+    const openBtn=document.getElementById('btnLocSearch');
+    const closeBtn=document.getElementById('locClose');
+
+    const floorIn=document.getElementById('locFloor');
+    const areaIn =document.getElementById('locArea');
+    const numIn  =document.getElementById('locNumber');
+    const prevEl =document.getElementById('locCodePreview');
+    const useBtn =document.getElementById('btnUseThisLoc');
+    const clrBtn =document.getElementById('btnLocClear');
+
+    const qInput=document.getElementById('locSearchInput');
+    const qBtn  =document.getElementById('locSearchBtn');
+    const tbody =document.getElementById('locTbody');
+
+    function getLocationSource(){
+      try{
+        const raw=sessionStorage.getItem('locationMaster');
+        if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)) return arr; }
+      }catch(e){}
+      return [
+        {code:'0301007', floor:'3F',  area:'A', number:'7'},
+        {code:'0502012', floor:'5F',  area:'B', number:'12'},
+        {code:'1226005', floor:'12F', area:'Z', number:'5'}
+      ];
+    }
+    function saveLocationSource(arr){
+      try{ sessionStorage.setItem('locationMaster', JSON.stringify(arr)); }catch(e){}
+    }
+
+    let data=getLocationSource();
+    let filtered=data.slice();
+    let activeIndex=-1;
+
+    function updatePreview(){
+      const code=genLocationCode(floorIn.value, areaIn.value, numIn.value);
+      if(prevEl) prevEl.textContent = code && code!=='0000000' ? code : '———';
+    }
+    function render(){
+      tbody.innerHTML='';
+      filtered.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className='loc-row'+(i===activeIndex?' active':'');
+        tr.innerHTML=`<td>${r.code}</td><td>${r.floor||''}</td><td>${r.area||''}</td><td>${r.number||''}</td>`;
+        tr.addEventListener('click',()=>{ activeIndex=i; syncActive(); });
+        tr.addEventListener('dblclick',()=>{ applyRow(i); });
+        tbody.appendChild(tr);
+      });
+      syncActive();
+    }
+    function syncActive(){
+      [...tbody.querySelectorAll('.loc-row')].forEach((row,idx)=>row.classList.toggle('active', idx===activeIndex));
+    }
+    function applyRow(i){
+      const r=filtered[i]; if(!r) return;
+      setVal('locationCode', r.code);
+      setVal('floor', r.floor||'');
+      setVal('area', r.area||'');
+      setVal('areaIndex', r.code.slice(2,4));
+      setVal('number', r.number||'');
+      document.getElementById('locModal').style.display='none';
+    }
+    function doFilter(q){
+      const t=(q||'').trim().toLowerCase();
+      filtered = !t ? data.slice()
+                    : data.filter(r=>(`${r.code} ${r.floor||''} ${r.area||''} ${r.number||''}`).toLowerCase().includes(t));
+      activeIndex = filtered.length?0:-1;
+      render();
+    }
+    function open(){
+      modal.style.display='flex';
+      floorIn.value = document.getElementById('floor')?.value || '';
+      areaIn.value  = document.getElementById('area')?.value  || '';
+      numIn.value   = document.getElementById('number')?.value|| '';
+      updatePreview();
+      qInput.value=''; doFilter('');
+      setTimeout(()=>floorIn.focus(),0);
+    }
+    function close(){ modal.style.display='none'; }
+
+    openBtn?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+
+    ['input','change','keyup'].forEach(ev=>{
+      floorIn?.addEventListener(ev, updatePreview);
+      areaIn ?.addEventListener(ev, updatePreview);
+      numIn  ?.addEventListener(ev, updatePreview);
+    });
+    useBtn?.addEventListener('click', ()=>{
+      const code=genLocationCode(floorIn.value, areaIn.value, numIn.value);
+      if(code==='0000000'){ alert('階・エリア・番号を入力してください'); return; }
+      if(!data.some(x=>String(x.code)===code)){
+        const rec={code, floor:floorIn.value||'', area:areaIn.value||'', number:numIn.value||''};
+        data.push(rec); saveLocationSource(data);
+      }
+      setVal('locationCode', code);
+      setVal('floor', floorIn.value||'');
+      setVal('area', areaIn.value||'');
+      setVal('areaIndex', code.slice(2,4));
+      setVal('number', numIn.value||'');
+      close();
+    });
+    clrBtn?.addEventListener('click', ()=>{ floorIn.value=''; areaIn.value=''; numIn.value=''; updatePreview(); });
+
+    qBtn?.addEventListener('click', ()=>doFilter(qInput.value));
+    qInput?.addEventListener('input', e=>doFilter(e.target.value));
+    qInput?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); qBtn.click(); }});
+
+    document.addEventListener('keydown', (e)=>{
+      if(modal.style.display!=='flex') return;
+      if(e.key==='Escape'){ e.preventDefault(); close(); return; }
+      if(e.key==='Enter' && (document.activeElement===floorIn || document.activeElement===areaIn || document.activeElement===numIn)){
+        e.preventDefault(); document.getElementById('btnUseThisLoc').click();
+      }
+    });
+  }
+
+  function recalcAccumDeprOnChange(){
+    ['purchasePrice','delivery','extraCost','qty','serviceLife','purchaseDate','depreciationMethod']
+      .forEach(id=>{
+        const el=document.getElementById(id);
+        el?.addEventListener('input', recalcAccumDepr);
+        el?.addEventListener('change', recalcAccumDepr);
+      });
+    document.getElementById('btnUseThisLoc')?.addEventListener('click', recalcAccumDepr);
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const q=loadFromQuery();
+    initCategoryModal();
+    initLocationModal();
+    recalcAccumDeprOnChange();
+    if(q){
+      fillFromPayload(q);
+      if(!q.location_code && q.floor && q.area && q.number){
+        const code=genLocationCode(q.floor, q.area, q.number);
+        setVal('locationCode', code);
+        syncFromLocationCode();
+      }
+    }
+    syncFromLocationCode();
+    recalcAccumDepr();
+  });
+
+  document.getElementById('btnRegister')?.addEventListener('click', ()=>{
+    const payload={
+      code: document.getElementById('code')?.value?.trim()||'',
+      maker: document.getElementById('maker')?.value?.trim()||'',
+      category_code: document.getElementById('categoryCode')?.value||'',
+      category_name: document.getElementById('categoryName')?.value||'',
+      item: document.getElementById('item')?.value?.trim()||'',
+      purchase_date: document.getElementById('purchaseDate')?.value||'',
+      location_code: document.getElementById('locationCode')?.value||'',
+      floor: document.getElementById('floor')?.value||'',
+      area: document.getElementById('area')?.value||'',
+      area_index: document.getElementById('areaIndex')?.value||'',
+      number: document.getElementById('number')?.value||'',
+      name1: document.getElementById('name1')?.value?.trim()||'',
+      name2: document.getElementById('name2')?.value?.trim()||'',
+      purchase_price: getNumber('purchasePrice'),
+      delivery: getNumber('delivery'),
+      extra_cost: getNumber('extraCost'),
+      qty: getNumber('qty'),
+      size: document.getElementById('size')?.value?.trim()||'',
+      service_life: getNumber('serviceLife'),
+      depreciation_method: document.getElementById('depreciationMethod')?.value||'',
+      accum_depr: getNumber('accumDepr')
+    };
+    console.log('REGISTER', payload);
+    alert('登録データをコンソールに出力しました。実装に合わせて送信してください。');
+  });
+</script>
+</body>
+</html>

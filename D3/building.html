@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="css\style.css" />
+    <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+
+    <div class="top-bar">
+        <div class="top-left">
+            <button class="logo-img" onclick="location.href='menu.html'">
+                <img src="img\logo.png">
+            </button>
+        </div>
+        <div class="top-right">
+            <span>ID : A1234</span>
+            <span>名前 : アンスヨン</span>
+            <button class="logoutBtn" type="button" onclick="location.href='login.html'">LOGOUT</button>
+        </div>
+    </div>
+
+    <div class="building-wrap">
+        <a href="listTwo.html" hover-tooltip="3F: A, B, C">
+            <div id="app"></div>
+        </a>
+    </div>
+    <script type="module" src="js/building.js"></script>
+</body>
+
+</html>

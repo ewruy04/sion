@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>在庫フロア</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style2.css">
+  <style>
+    .img-floor img { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+        <div class="top-left">
+            <button class="logo-img" onclick="location.href='menu.html'">
+                <img src="img\logo.png">
+            </button>
+        </div>
+        <div class="top-right">
+            <span>ID : A1234</span>
+            <span>名前 : アンスヨン</span>
+            <button class="logoutBtn" type="button" onclick="location.href='login.html'">LOGOUT</button>
+        </div>
+    </div>
+
+  <div class="layout" id="layout">
+    <section class="panel panel-left">
+      <button class="back-btn" onclick="location.href='building.html'">
+        <img src="img/arrow.png" alt="戻る">
+      </button>
+
+      <div class="floor-form-group">
+        <!-- <div class="form-building">
+          <div class="building-group">
+            <select id="building" name="building">
+              <option value="">建物</option>
+              <option value="aa">aa</option>
+              <option value="bb">bb</option>
+              <option value="cc">cc</option>
+              <option value="dd">dd</option>
+              <option value="ee">ee</option>
+            </select>
+          </div>
+        </div> -->
+
+        <div class="form-floor">
+          <div class="floor-group">
+            <select id="floor" name="floor">
+              <option value="">フロア</option>
+              <option value="1F">1F</option>
+              <option value="2F">2F</option>
+              <option value="3F">3F</option>
+              <option value="4F">4F</option>
+              <option value="5F">5F</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="floor-info">
+        <div class="title-bar">
+          <h1 class="location-title-info" id="titleText"> 3F </h1>
+        </div>
+        <h3 class="location-area-info">選択した区域: 1</h3>
+
+
+        <div class="floor-container">
+          <div class="img-floor">
+            <img id="floorImage" src="img/floor.png" alt="floor">
+          </div>
+
+          <table class="sList-table" id="areaList">
+            <thead>
+              <tr>
+                <th>商品コード</th>
+                <th>商品名</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>P001</td>
+                <td>ボールペン</td>
+              </tr>
+              <tr>
+                <td>P002</td>
+                <td>ノート</td>
+              </tr>
+              <tr>
+                <td>P003</td>
+                <td>鋏</td>
+              </tr>
+              <tr>
+                <td>P004</td>
+                <td>ポストイット</td>
+              </tr>
+              <tr>
+                <td>P005</td>
+                <td>USBメモリ 32GB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <aside class="panel panel-right">
+      <button class="back-btn" id="closeRightBtn" title="戻る">
+        <img src="img/arrow.png" alt="戻る">
+      </button>
+
+      <div class="search-panel">
+        <div class="form-block">
+          <input type="text" id="productCode" name="productCode" placeholder="位置コード">
+        </div>
+
+        <div class="form-block">
+          <select id="floor2" name="floor2">
+            <option value="">フロア</option>
+            <option value="1F">1F</option>
+            <option value="2F">2F</option>
+            <option value="3F">3F</option>
+            <option value="4F">4F</option>
+            <option value="5F">5F</option>
+          </select>
+        </div>
+
+        <div class="form-block">
+          <select id="numberSelect" name="numberSelect">
+            <option value="">番号</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+
+        <div class="form-block">
+          <input type="text" id="productCode" name="productCode" placeholder="商品コード">
+        </div>
+
+        <div class="form-block">
+          <select id="categorySelect" name="categorySelect">
+            <option value="">カテゴリー</option>
+            <option value="a">a</option>
+            <option value="b">b</option>
+            <option value="c">c</option>
+            <option value="d">d</option>
+            <option value="e">e</option>
+          </select>
+        </div>
+
+        <div class="form-block">
+          <select id="itemSelect" name="itemSelect">
+            <option value="">品目</option>
+            <option value="aa">aa</option>
+            <option value="bb">bb</option>
+            <option value="cc">cc</option>
+            <option value="dd">dd</option>
+            <option value="ee">ee</option>
+          </select>
+        </div>
+
+        <div class="form-block">
+          <input type="text" id="productName" name="productName" placeholder="商品名">
+        </div>
+
+        <div class="form-block search-button">
+          <button id="searchBtn" class="search-btn">検索</button>
+        </div>
+      </div>
+
+      <div class="table-toggle" id="tableToggle" role="tablist" aria-label="표 전환">
+        <button class="toggle-btn active" data-mode="product" role="tab" aria-selected="true">商品一覧</button>
+        <button class="toggle-btn" data-mode="stock" role="tab" aria-selected="false">在庫一覧</button>
+      </div>
+
+      <table class="result-table table-fill" id="resultTable">
+        <thead>
+          <tr>
+            <th></th>
+            <th>商品コード</th>
+            <th>カテゴリー</th>
+            <th>品目</th>
+            <th>商品名</th>
+            <th>建物</th>
+            <th>階</th>
+            <th>エリア</th>
+            <th>番号</th>
+            <th>価格</th>
+            <th>製造会社</th>
+            <th>数量</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="radio" name="pick" value="P001"></td>
+            <td>P001</td>
+            <td>文具</td>
+            <td>ペン</td>
+            <td>ボールペン</td>
+            <td>aaビル</td>
+            <td>3F</td>
+            <td>A</td>
+            <td>3</td>
+            <td>120</td>
+            <td>ABC社</td>
+            <td>50</td>
+          </tr>
+          <tr>
+            <td><input type="radio" name="pick" value="P002"></td>
+            <td>P002</td>
+            <td>文具</td>
+            <td>ノート</td>
+            <td>スケッチブック</td>
+            <td>aaビル</td>
+            <td>3F</td>
+            <td>B</td>
+            <td>7</td>
+            <td>300</td>
+            <td>XYZ社</td>
+            <td>20</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div id="pagination" class="pagination"></div>
+
+      <div class="btn-container">
+        <button id="createBtn" class="create-btn">登録</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="modal-overlay" id="formModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">登録</div>
+        <button class="modal-close" id="modalCloseBtn" type="button">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="formFrame" title="asset form"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const layout = document.getElementById('layout');
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "split") layout.classList.add("show-list");
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const floorImage = document.getElementById('floorImage');
+      const closeRightBtn = document.getElementById('closeRightBtn');
+      floorImage?.addEventListener('click', () => layout?.classList.add('show-list'));
+      closeRightBtn?.addEventListener('click', () => layout?.classList.remove('show-list'));
+    });
+
+    function getCurrentState() {
+      const byId = (id) => document.getElementById(id);
+      return {
+
+        floor: byId('floor')?.value || '',
+        floor2: byId('floor2')?.value || '',
+        number: byId('numberSelect')?.value || '',
+        // location_code: byId('locationCodeInput')?.value?.trim() || '',
+        product_code: byId('productCodeSearch')?.value?.trim() || '',
+        category: byId('categorySelect')?.value || '',
+        item: byId('itemSelect')?.value || '',
+        product_name: byId('productName')?.value?.trim() || ''
+      };
+    }
+
+    function toQuery(obj) {
+      const qs = new URLSearchParams();
+      Object.entries(obj).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && String(v).trim() !== '') {
+          qs.append(k, String(v));
+        }
+      });
+      return qs.toString();
+    }
+
+    function goForm(mode, extra) {
+      const base = getCurrentState();
+      const payload = { mode, ...base, ...(extra || {}) };
+      const query = toQuery(payload);
+      location.href = 'asset_form.html?' + query;
+    }
+
+    document.getElementById('createBtn').addEventListener('click', () => {
+      goForm('create');
+    });
+
+    function rowToData(tr) {
+      const td = tr.querySelectorAll('td');
+      return {
+        product_code: td[1]?.textContent.trim(),
+        category:     td[2]?.textContent.trim(),
+        item:         td[3]?.textContent.trim(),
+        product_name: td[4]?.textContent.trim(),
+        building:     td[5]?.textContent.trim(),
+        floor:        td[6]?.textContent.trim(),
+        area:         td[7]?.textContent.trim(),
+        number:       td[8]?.textContent.trim(),
+        price:        td[9]?.textContent.trim(),
+        manufacturer: td[10]?.textContent.trim(),
+        quantity:     td[11]?.textContent.trim()
+      };
+    }
+
+    document.getElementById('resultTable').addEventListener('change', (e) => {
+      if (e.target && e.target.name === 'pick') {
+        const tr = e.target.closest('tr');
+        const row = rowToData(tr);
+        goForm('edit', row);
+      }
+    });
+  </script>
+</body>
+</html>
