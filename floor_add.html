@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>평면도</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --border:#ddd; --bg:#fafafa; --ink:#222; --muted:#666; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; margin:20px; color:var(--ink); }
+    h2 { margin: 0 0 12px; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+    .toolbar > * { padding:8px 10px; }
+    .pill { padding:4px 8px; border:1px solid var(--border); border-radius:999px; background:#fff; }
+    .wrap { display:grid; grid-template-columns:2fr 1fr; gap:16px; align-items:start; }
+    .stage { position:relative; border:1px solid var(--border); border-radius:8px; background:var(--bg); min-height:360px; display:grid; place-items:center; overflow:hidden; }
+    .stage-inner { position:relative; }
+    #img { max-width:100%; height:auto; display:block; }
+    #svg { position:absolute; left:0; top:0; pointer-events:none; }
+    /* 스타일 */
+    .pt { fill:rgba(0,0,0,0.9); stroke:#fff; stroke-width:2; }
+    .pt-first { fill:rgba(0,150,0,0.95); }
+    .pt-pending { fill:rgba(0,128,255,0.95); stroke:#fff; stroke-width:2; }
+    .wire { fill:none; stroke:rgba(0,0,0,0.7); stroke-width:2; stroke-dasharray:5 4; }
+    .wire-snap { stroke:rgba(0,128,0,0.9); }
+    .poly { fill:rgba(0,128,255,0.12); stroke:rgba(0,128,255,0.9); stroke-width:2; }
+    .snap-halo { fill:none; stroke:rgba(0,150,0,0.7); stroke-width:2; stroke-dasharray:3 3; }
+    .panel { border:1px solid var(--border); border-radius:8px; padding:12px; background:#fff; }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:12px; }
+    textarea { width:100%; height:220px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .kv { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+    .kv .label { color:var(--muted); }
+    .float-confirm {
+      position:absolute; transform:translate(8px,-8px);
+      background:#fff; border:1px solid var(--border); border-radius:6px; padding:6px;
+      display:none; gap:6px; z-index:5; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+    .float-confirm button { padding:4px 8px; }
+    .muted { color:var(--muted); font-size:12px; }
+    .list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .item { border:1px solid var(--border); border-radius:8px; padding:8px; }
+  </style>
+</head>
+<body>
+  <h2>평면도 등록</h2>
+
+  <div class="toolbar">
+    <input id="fileInput" type="file" accept="image/*" />
+    <input id="regionName" type="text" placeholder="구역명 입력" />
+    <button id="saveRegionBtn" disabled>구역 저장</button>
+  </div>
+
+  <div class="wrap">
+    <div class="stage" id="stage">
+      <div class="stage-inner" id="stageInner">
+        <img id="img" alt="업로드 이미지" />
+        <svg id="svg"></svg>
+        <div id="floatConfirm" class="float-confirm">
+          <button id="confirmBtn" type="button">확정</button>
+          <button id="cancelBtn" type="button">취소</button>
+          <span id="snapHint" class="muted" style="display:none;">시작점에 스냅</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="kv mono">
+        <span class="label">원본 크기</span><span id="naturalSize">-</span>
+        <span class="label">점 개수</span><span id="ptCount">0</span>
+        <span class="label">마지막(px)</span><span id="lastPx">-</span>
+        <span class="label">마지막(%)</span><span id="lastPct">-</span>
+        <span class="label">닫힘 상태</span><span id="closedState">열림</span>
+      </div>
+
+      <div class="row">
+        <button id="undoBtn" type="button" disabled>마지막 점 되돌리기</button>
+        <button id="clearPtsBtn" type="button" disabled>현재 점 전부 지우기</button>
+        <button id="clearAllBtn" type="button" disabled>저장된 구역 모두 삭제</button>
+      </div>
+
+      <h4>구역 데이터(JSON)</h4>
+      <textarea id="jsonText" class="mono" readonly placeholder='[{"name":"A","points":[...]}]'></textarea>
+      <div class="row">
+        <button id="copyJsonBtn" type="button" disabled>JSON 복사</button>
+        <button id="downloadJsonBtn" type="button" disabled>JSON 다운로드</button>
+        <label class="pill">JSON 불러오기
+          <input id="importJsonInput" type="file" accept="application/json" style="display:none;">
+        </label>
+      </div>
+
+      <h4 style="margin-top:14px;">저장된 구역</h4>
+      <div id="regionList" class="list"></div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const img = document.getElementById('img');
+    const svg = document.getElementById('svg');
+    const stageInner = document.getElementById('stageInner');
+    const floatConfirm = document.getElementById('floatConfirm');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const snapHint = document.getElementById('snapHint');
+
+    const naturalSizeEl = document.getElementById('naturalSize');
+    const ptCountEl = document.getElementById('ptCount');
+    const lastPxEl = document.getElementById('lastPx');
+    const lastPctEl = document.getElementById('lastPct');
+    const closedStateEl = document.getElementById('closedState');
+
+    const undoBtn = document.getElementById('undoBtn');
+    const clearPtsBtn = document.getElementById('clearPtsBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+
+    const regionNameInput = document.getElementById('regionName');
+    const saveRegionBtn = document.getElementById('saveRegionBtn');
+
+    const jsonText = document.getElementById('jsonText');
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+    const importJsonInput = document.getElementById('importJsonInput');
+    const regionList = document.getElementById('regionList');
+
+    let naturalW = 0, naturalH = 0;
+    let currentPts = [];              // {x,y,xpct,ypct}
+    let pending = null;               // {x,y, clientX, clientY, snap:boolean}
+    let isClosed = false;             // 폴리곤 닫힘 여부
+    let regions = [];                 // [{name, points:[...]}]
+
+    // --- 이미지 업로드 ---
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files?.[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      img.onload = () => {
+        naturalW = img.naturalWidth;
+        naturalH = img.naturalHeight;
+        naturalSizeEl.textContent = `${naturalW} × ${naturalH}px`;
+        setupSvgBox();
+        resetCurrent();
+        renderAll();
+        enableUi();
+      };
+      img.src = url;
+    });
+
+    window.addEventListener('resize', () => { setupSvgBox(); renderAll(); });
+
+    function setupSvgBox() {
+      if (!img.src) return;
+      const rImg = img.getBoundingClientRect();
+      const rStage = stageInner.getBoundingClientRect();
+      svg.style.left = (rImg.left - rStage.left) + 'px';
+      svg.style.top  = (rImg.top  - rStage.top ) + 'px';
+      svg.setAttribute('width', rImg.width);
+      svg.setAttribute('height', rImg.height);
+      svg.setAttribute('viewBox', `0 0 ${naturalW} ${naturalH}`);
+    }
+
+    // --- 클릭 → 임시점 생성 & 스냅 판단 ---
+    img.addEventListener('click', (e) => {
+      if (!img.src || isClosed) return;
+      const {x, y} = visClickToOriginal(e);
+      pending = { x, y, clientX: e.clientX, clientY: e.clientY, snap: willSnapToFirst(e) };
+      showFloatConfirm(e.clientX, e.clientY, pending.snap);
+      renderAll();
+    });
+
+    function visClickToOriginal(e){
+      const rect = img.getBoundingClientRect();
+      const xVis = e.clientX - rect.left, yVis = e.clientY - rect.top;
+      const x = +(xVis * (naturalW / rect.width)).toFixed(2);
+      const y = +(yVis * (naturalH / rect.height)).toFixed(2);
+      return {x,y};
+    }
+
+    // 첫 점 근처인지(시각 px 기준)
+    function willSnapToFirst(e){
+      if (currentPts.length === 0) return false;
+      const first = currentPts[0];
+      const rect = img.getBoundingClientRect();
+      const firstVisX = first.x / naturalW * rect.width + rect.left;
+      const firstVisY = first.y / naturalH * rect.height + rect.top;
+      const dx = e.clientX - firstVisX;
+      const dy = e.clientY - firstVisY;
+      const dist = Math.hypot(dx, dy);
+      const SNAP_TOL_VIS_PX = 14; // 화면상 14px 이내면 스냅
+      return dist <= SNAP_TOL_VIS_PX;
+    }
+
+    // 단축키: Enter=확정, Esc=취소
+    window.addEventListener('keydown', (e) => {
+      if (!pending) return;
+      if (e.key === 'Enter') { confirmPending(); }
+      if (e.key === 'Escape') { cancelPending(); }
+    });
+
+    confirmBtn.addEventListener('click', confirmPending);
+    cancelBtn.addEventListener('click', cancelPending);
+
+    function confirmPending() {
+      if (!pending) return;
+      if (pending.snap && currentPts.length >= 2) {
+        // 스냅 닫기: 새 점 추가 없이 폴리곤 닫힘 상태로
+        isClosed = true;
+        pending = null;
+        hideFloatConfirm();
+        updateInfo();
+        renderAll();
+        enableUi();
+        return;
+      }
+      // 일반 확정: 점 추가
+      const { x, y } = pending;
+      const xpct = +((x / naturalW) * 100).toFixed(2);
+      const ypct = +((y / naturalH) * 100).toFixed(2);
+      currentPts.push({ x, y, xpct, ypct });
+      pending = null;
+      hideFloatConfirm();
+      updateInfo();
+      renderAll();
+      enableUi();
+    }
+
+    function cancelPending() {
+      pending = null; hideFloatConfirm(); renderAll();
+    }
+
+    function showFloatConfirm(clientX, clientY, snapped) {
+      const rStage = stageInner.getBoundingClientRect();
+      floatConfirm.style.left = (clientX - rStage.left) + 'px';
+      floatConfirm.style.top  = (clientY - rStage.top ) + 'px';
+      snapHint.style.display = snapped ? 'inline' : 'none';
+      floatConfirm.style.display = 'flex';
+    }
+    function hideFloatConfirm(){ floatConfirm.style.display='none'; }
+
+    // --- 편집 버튼들 ---
+    undoBtn.addEventListener('click', () => {
+      if (!currentPts.length || isClosed) return;
+      currentPts.pop();
+      updateInfo(); renderAll(); enableUi();
+    });
+    clearPtsBtn.addEventListener('click', () => { resetCurrent(); renderAll(); enableUi(); });
+    clearAllBtn.addEventListener('click', () => { regions=[]; dumpJson(); renderAll(); enableUi(); });
+
+    function resetCurrent(){
+      currentPts = []; pending = null; isClosed = false;
+      hideFloatConfirm(); updateInfo();
+    }
+
+    // --- 구역 저장 (닫힘+이름) ---
+    saveRegionBtn.addEventListener('click', () => {
+      const name = regionNameInput.value.trim();
+      if (!name) { alert('구역명을 입력해 주세요.'); return; }
+      if (!isClosed || currentPts.length < 3) { alert('구역을 스냅으로 닫아 주세요(최소 3점).'); return; }
+      regions.push({ name, points: currentPts.map(p => ({...p})) });
+      regionNameInput.value = '';
+      resetCurrent();
+      dumpJson(); renderAll(); enableUi();
+    });
+
+    // --- JSON IO ---
+    copyJsonBtn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(jsonText.value);
+        copyJsonBtn.textContent='복사됨!'; setTimeout(()=>copyJsonBtn.textContent='JSON 복사',900);
+      } catch { alert('복사 권한을 허용해 주세요.'); }
+    });
+    downloadJsonBtn.addEventListener('click', () => {
+      const blob = new Blob([jsonText.value || '[]'], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download='regions.json'; a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    document.querySelector('label[for="importJsonInput"]')?.addEventListener('click', ()=>importJsonInput.click());
+    importJsonInput.addEventListener('change', () => {
+      const f = importJsonInput.files?.[0]; if(!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (!Array.isArray(data)) throw new Error('배열 아님');
+          regions = data.filter(r => r && r.name && Array.isArray(r.points));
+          dumpJson(); renderAll(); enableUi();
+        } catch { alert('JSON 형식이 올바르지 않습니다.'); }
+      };
+      reader.readAsText(f, 'utf-8'); importJsonInput.value='';
+    });
+
+    // --- 렌더링 ---
+    function renderAll(){
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+      // 저장된 폴리곤
+      regions.forEach(r => {
+        if (r.points.length >= 3) {
+          const ptsStr = r.points.map(p => `${p.x},${p.y}`).join(' ');
+          const poly = mk('polygon', { points: ptsStr, class:'poly' });
+          svg.appendChild(poly);
+          const label = mk('text', { x:r.points[0].x+6, y:r.points[0].y-6, fill:'rgba(0,0,0,0.85)', 'font-size':14 });
+          label.textContent = r.name; svg.appendChild(label);
+        }
+      });
+
+      // 현재 그리는 도형
+      if (currentPts.length){
+        // 닫힘이면 polygon으로
+        if (isClosed && currentPts.length >= 3) {
+          const ptsStr = currentPts.map(p => `${p.x},${p.y}`).join(' ');
+          svg.appendChild(mk('polygon',{ points:ptsStr, class:'poly'}));
+        } else {
+          // 열림이면 polyline
+          const d = currentPts.map(p => `${p.x},${p.y}`).join(' ');
+          svg.appendChild(mk('polyline',{ points:d, class:'wire'}));
+          // 임시점이 있고, 스냅이면 초록 와이어
+          if (pending && currentPts.length){
+            const last = currentPts[currentPts.length-1];
+            const c = mk('polyline',{ points:`${last.x},${last.y} ${pending.x},${pending.y}`, class:`wire ${pending.snap?'wire-snap':''}` });
+            svg.appendChild(c);
+          }
+        }
+        // 점들
+        currentPts.forEach((p,i)=>{
+          svg.appendChild(mk('circle',{ cx:p.x, cy:p.y, r:6, class:`pt ${i===0?'pt-first':''}` }));
+          const t = mk('text',{ x:p.x+8, y:p.y-8, fill:'rgba(0,0,0,0.85)', 'font-size':12 }); t.textContent=i+1; svg.appendChild(t);
+        });
+        // 스냅 표시용 헤일로
+        if (pending && pending.snap && currentPts.length){
+          const f = currentPts[0];
+          svg.appendChild(mk('circle',{ cx:f.x, cy:f.y, r:14*(naturalW/ img.getBoundingClientRect().width), class:'snap-halo' }));
+          svg.appendChild(mk('circle',{ cx:pending.x, cy:pending.y, r:6, class:'pt-pending'}));
+        } else if (pending){
+          svg.appendChild(mk('circle',{ cx:pending.x, cy:pending.y, r:6, class:'pt-pending'}));
+        }
+      }
+      renderRegionList();
+    }
+
+    function mk(tag, attrs){ const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v)); return el; }
+
+    function updateInfo(){
+      const n = currentPts.length; ptCountEl.textContent = n;
+      if (n){
+        const p = currentPts[n-1];
+        lastPxEl.textContent = `x:${p.x}, y:${p.y}`;
+        lastPctEl.textContent = `x:${p.xpct??((p.x/naturalW*100).toFixed(2))}%, y:${p.ypct??((p.y/naturalH*100).toFixed(2))}%`;
+      } else { lastPxEl.textContent='-'; lastPctEl.textContent='-'; }
+      closedStateEl.textContent = isClosed ? '닫힘' : '열림';
+    }
+
+    function dumpJson(){ jsonText.value = JSON.stringify(regions, null, 2); }
+
+    function enableUi(){
+      const hasImg = !!img.src;
+      const hasPts = currentPts.length > 0;
+      const hasRegions = regions.length > 0;
+      const canSave = hasImg && isClosed && currentPts.length>=3 && regionNameInput.value.trim().length>0;
+
+      undoBtn.disabled = !hasPts || isClosed;
+      clearPtsBtn.disabled = !hasPts && !isClosed;
+      clearAllBtn.disabled = !hasRegions;
+      saveRegionBtn.disabled = !canSave;
+      copyJsonBtn.disabled = !hasRegions;
+      downloadJsonBtn.disabled = !hasRegions;
+
+      dumpJson();
+    }
+
+    regionNameInput.addEventListener('input', enableUi);
+
+    function renderRegionList(){
+      regionList.innerHTML='';
+      regions.forEach((r,idx)=>{
+        const div = document.createElement('div'); div.className='item mono';
+        const ptsPreview = r.points.slice(0,3).map(p=>`(${p.x},${p.y})`).join(', ')+(r.points.length>3?' ...':'');
+        div.innerHTML = `
+          <div><b>${idx+1}. ${escapeHtml(r.name)}</b> <span class="muted">/ ${r.points.length} pts</span></div>
+          <div class="muted">${escapeHtml(ptsPreview)}</div>
+          <div class="row" style="margin-top:6px;">
+            <button data-act="focus" data-idx="${idx}">구역 보기</button>
+            <button data-act="delete" data-idx="${idx}">삭제</button>
+          </div>`;
+        regionList.appendChild(div);
+      });
+      regionList.querySelectorAll('button').forEach(b=>{
+        const idx = +b.dataset.idx, act=b.dataset.act;
+        b.addEventListener('click', ()=>{
+          if (act==='delete'){ regions.splice(idx,1); dumpJson(); renderAll(); enableUi(); }
+          if (act==='focus'){ alert(`"${regions[idx].name}" / 점 ${regions[idx].points.length}개`); }
+        });
+      });
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  </script>
+</body>
+</html>
