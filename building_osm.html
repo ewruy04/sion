@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <title>住所検索＋建物選択</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="/css/building_osm.css" />
+</head>
+<body>
+    <header class="topbar">
+        <input id="addrInput" type="text" placeholder="住所を入力 (例: 東京都新宿区…)" />
+        <button id="searchBtn" type="button">検索</button>
+        <span class="hint">地図上に候補が表示されます</span>
+    </header>
+
+    <main class="main">
+        <aside class="sidebar">
+            <h3>候補の住所</h3>
+            <ul id="addrList" class="list"><li class="muted">住所を検索してください。</li></ul>
+
+            <h3>見つかった建物</h3>
+            <ul id="bldgList" class="list"><li class="muted">まだ検索していません。</li></ul>
+
+            <h3>ログ</h3>
+            <pre id="log" class="log"></pre>
+        </aside>
+
+        <section class="map-wrap">
+            <div id="map"></div>
+            <div id="status" class="status">準備完了</div>
+        </section>
+    </main>
+
+    <!-- App JS -->
+    <script defer src="/js/building_osm.js"></script>
+</body>
+</html>

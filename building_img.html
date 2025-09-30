@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <title>建物プレビュー（3D）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/css/style5.css" />
+    <!-- three.js를 CDN으로 매핑 -->
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+          }
+        }
+    </script>
+
+
+    <!-- three.js (로컬) -->
+
+    <style>
+        #viewer {
+            width: 100%;
+            height: calc(100vh - var(--topbar-h) - var(--toolbar-h));
+            background: #ffffff
+        }
+
+        .hint {
+            color: #444;
+            font-size: 13px
+        }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 90px;
+            background: #111827ee;
+            color: #fff;
+            border: 1px solid #2b3446;
+            padding: 8px 12px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: .25s;
+            z-index: 3000
+        }
+
+            #toast.show {
+                opacity: 1
+            }
+
+        .img-mode, .floor-mode {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .left-col, .right-col {
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+    </style>
+</head>
+<body>
+    <!-- 상단 바 -->
+    <div class="top-bar">
+        <div class="top-left">
+            <button class="logo-img" id="logoBtn" aria-label="メニューへ">
+                <img src="/img/logo.png" alt="logo">
+            </button>
+        </div>
+        <div class="top-right">
+            <span id="userId">ID : -</span>
+            <span id="userName">名前 : -</span>
+            <button class="logoutBtn" type="button" id="logoutBtn">LOGOUT</button>
+        </div>
+    </div>
+
+    <!-- 가운데 화면 + 좌/우 화살표 -->
+    <main class="wrap">
+        <aside class="left-col">
+            <div id="arrowPre" class="arrowPre-btn">
+                <button id="btnPrev" class="button3" type="button" title="画像モードへ">⬅</button>
+            </div>
+        </aside>
+
+        <section class="screen">
+            <div class="toolbar">
+                <!-- 이미지 모드 -->
+                <div class="img-mode">
+                    <label for="floors">初期階数</label>
+                    <input type="number" id="floors" min="1" max="200" value="5" />
+                    <button id="createBuilding" class="custom-btn btn-1" type="button">作る</button>
+                </div>
+                <!-- 층고 모드 -->
+                <div class="floor-mode" style="display:none">
+                    <span class="hint">階高モード：クリック=追加 / Alt+Click=削除</span>
+                    <button id="btnSaveLevels" class="custom-btn btn-1" type="button" style="display:none">完了</button>
+                    <button id="btnClearGuides" class="custom-btn btn-1" type="button">初期化</button>
+                </div>
+            </div>
+
+            <div id="viewer"><div id="toast"></div></div>
+        </section>
+
+        <aside class="right-col">
+            <div id="arrowNext" class="arrowNext-btn">
+                <button id="btnNext" class="button3" type="button" title="階高モードへ">➡</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 숨겨진 파일 입력 -->
+    <input id="fileInput" type="file" accept="image/*" style="display:none" />
+
+    <!-- 앱 스크립트 -->
+    <script type="module" src="/js/tt.js?v=final"></script>
+
+    <!-- 탑바 세션 연동(선택) -->
+    <script>
+        (function () {
+            const $ = s => document.querySelector(s);
+            const idEl = $('#userId'), nameEl = $('#userName'), logoutBtn = $('#logoutBtn'), logoBtn = $('#logoBtn');
+            function render(u) { idEl.textContent = 'ID : ' + (u.id || '-'); nameEl.textContent = '名前 : ' + (u.name || '-'); }
+            function getU() { try { return JSON.parse(sessionStorage.getItem('user') || '{}'); } catch { return {}; } }
+            const u = getU(); u.id ? render(u) : setTimeout(() => { const v = getU(); v.id ? render(v) : location.href = '/pages/login.html'; }, 800);
+            logoBtn.addEventListener('click', () => location.href = '/pages/menu.html');
+            logoutBtn.addEventListener('click', () => {
+                sessionStorage.removeItem('user');
+                window.chrome?.webview?.postMessage(JSON.stringify({ Action: 'auth:logout' }));
+                location.href = '/pages/login.html';
+            });
+        })();
+    </script>
+</body>
+</html>
